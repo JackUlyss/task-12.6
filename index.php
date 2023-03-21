@@ -47,7 +47,9 @@ $example_persons_array = [
 ];
 
 function getPartsFromFullname ($fullname) {
-	return	explode(' ', $fullname);
+    $a = ['surname', 'name', 'patronymic'];
+    $array = explode(' ', $fullname);
+	return	array_combine($a, $array);
 };
 
 function getFullnameFromParts ($surname, $name, $patronymic) {
@@ -56,9 +58,7 @@ function getFullnameFromParts ($surname, $name, $patronymic) {
 
 function getShortName ($fullname) {
 	$a = getPartsFromFullname($fullname);
-	$name = $a[1];
-	$p = mb_substr($a[2], 0, 1);
-	return $name.' '.$p.'.';
+	return $a['name'].' '.mb_substr($a['patronymic'], 0, 1).'.';
 };
 
 function getGenderFromName ($fullname) {
@@ -66,18 +66,18 @@ function getGenderFromName ($fullname) {
 		$a = getPartsFromFullname($fullname);
 		$gender = 0;
 
-		if (mb_substr($a[2], -3) == 'вна')
+		if (mb_substr($a['patronymic'], -3) == 'вна')
 			$gender--;
-		if (mb_substr($a[1], -1) == 'а')
+		if (mb_substr($a['name'], -1) == 'а')
 			$gender--;
-		if (mb_substr($a[0], -2) == 'ва')
+		if (mb_substr($a['surname'], -2) == 'ва')
 			$gender--;
 
-		if (mb_substr($a[2], -2) == 'ич')
+		if (mb_substr($a['patronymic'], -2) == 'ич')
 			$gender++;
-		if (mb_substr($a[1], -1) == 'й' or mb_substr($a[1], -1) == 'н')
+		if (mb_substr($a['name'], -1) == 'й' or mb_substr($a['name'], -1) == 'н')
 			$gender++;
-		if (mb_substr($a[0], -1) == 'в')
+		if (mb_substr($a['surname'], -1) == 'в')
 			$gender++;
 
 		if ($gender > 0) {
@@ -91,43 +91,42 @@ function getGenderFromName ($fullname) {
 
 function getGenderDescription ($array) {
 
-    $gen = count($array);
+  $gen = count($array);
 
 	$male = count(array_filter($array, function($k) {
-        
-        return getGenderFromName($k['fullname']) == 1;
-    }));
+    return getGenderFromName($k['fullname']) == 1;
+  }));
     
-    $female = count(array_filter($array, function($k) {
-        return getGenderFromName($k['fullname']) == -1;
-    }));
+  $female = count(array_filter($array, function($k) {
+    return getGenderFromName($k['fullname']) == -1;
+  }));
         
-    $undef = count(array_filter($array, function($k) {
-        return getGenderFromName($k['fullname']) == 0;
-    }));
+  $undef = count(array_filter($array, function($k) {
+    return getGenderFromName($k['fullname']) == 0;
+  }));
 
-    $manPercent = round($male/$gen*100, 2);
-    $femmalePercent = round($female/$gen*100, 2);
-    $udPercent = round($undef/$gen*100, 2);
+  $malePercent = round($male/$gen*100, 2);
+  $femalePercent = round($female/$gen*100, 2);
+  $undefPercent = round($undef/$gen*100, 2);
 
 	return <<<TEXT
 	Гендерный состав аудитории:
 	---------------------------
-	Мужчины - $manPercent%
-	Женщины - $femmalePercent%
-	Не удалось определить - $udPercent%
+	Мужчины - $malePercent%
+	Женщины - $femalePercent%
+	Не удалось определить - $undefPercent%
 TEXT;
 };
 
 function getPerfectPartner ($surname, $name, $patronymic, $array) {
     $surname = mb_convert_case($surname, MB_CASE_TITLE_SIMPLE);
     $name = mb_convert_case($name, MB_CASE_TITLE_SIMPLE);
-    $patronimyc = mb_convert_case($patronymic, MB_CASE_TITLE_SIMPLE);
-    $fullname = getFullnameFromParts($surname, $name, $patronimyc);
+    $patronymic = mb_convert_case($patronymic, MB_CASE_TITLE_SIMPLE);
+    $fullname = getFullnameFromParts($surname, $name, $patronymic);
     $genderFirst = getGenderFromName($fullname);
     $randomPerson = $array[array_rand($array)]['fullname'];
     $genderSecond = getGenderFromName($randomPerson);
-    if ($genderFirst == -$genderSecond) {
+    if ($genderFirst == -$genderSecond and $genderFirst != 0) {
     	$shortFirst = getShortName($fullname);
     	$shortSecond = getShortName($randomPerson);
     	$randNum = round(rand(5000, 10000)/100, 2);
